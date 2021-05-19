@@ -62,7 +62,7 @@ if __name__ == "__main__":
     for i in range(len(boxes)):
         if classes[i] == 1 and scores[i] > threshold:
             box = boxes[i]
-            cv2.rectangle(img,(box[1],box[0]),(box[3],box[2]),(255,0,0),2)
+            cv2.rectangle(img, (box[1], box[0]), (box[3], box[2]), (255, 0, 0), 2)
 
-    plt.imsave('detection_result.jpg', img)
+    plt.imsave('human_detection_result.jpg', img)
 
