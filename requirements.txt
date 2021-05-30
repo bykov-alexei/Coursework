@@ -1,0 +1,5 @@
+flask
+pymysql
+opencv-python
+face-recognition
+pillow
