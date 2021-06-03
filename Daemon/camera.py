@@ -63,24 +63,12 @@ class DetectorAPI:
 
 def find_person(embedding):
     conn, cursor = connect()
-    query = "SELECT * FROM known_persons"
+    formula = " + ".join([f"({'e%i' % i} - {embedding[i-1]}) * ({'e%i' % i} - {embedding[i-1]})" for i in range(1, 129)])
+    query = f"SELECT id, name, {formula} as `proximity` FROM known_persons ORDER BY `proximity` ASC"
     cursor.execute(query)
-    distances = {}
-    persons = {}
-    for row in cursor.fetchall():
-        person_embedding = np.frombuffer(base64.b64decode(row['embedding']), dtype='float64')
-        person_name = row['name']
-        distances[name] = np.linalg.norm(embedding - person_embedding)
-        persons[name] = row
-    if len(distances):
-        nearest_person = min(distances.items(), key=lambda x: x[1])
-        min_distance = nearest_person[1]
-        if min_distance < 0.6:
-            return persons[min(distances.items(), key=lambda x: x[1])[0]]
-    else:
-        return None
-
-
+    result = cursor.fetchone()
+    if result['proximity'] < 0.6:
+        return result
 
 
 class Camera:
@@ -144,9 +132,9 @@ class Camera:
                 human_picture_filename = None
                 face_picture_filename = None
                 if human_id:
-                    human_picture_filename = os.path.join('images', 'humans', human_id + '.jpg')
+                    human_picture_filename = os.path.join('../images', 'humans', human_id + '.jpg')
                 if face is not None:
-                    face_picture_filename = os.path.join('images', 'faces', human_id + '_face' + '.jpg')
+                    face_picture_filename = os.path.join('../images', 'faces', human_id + '_face' + '.jpg')
 
                 human_cx = (box[3] - box[1]) // 2
                 human_cy = (box[2] - box[0]) // 2                
@@ -164,6 +152,13 @@ class Camera:
                     args = (human_id, face_id, self.id, D, human_picture_filename, face_picture_filename, human_cx, human_cy, *encoding)
                 conn, cursor = connect()
                 cursor.execute(query, args)
+
+                success, a_numpy = cv2.imencode('.jpg', img)
+                a = base64.b64encode(a_numpy.tobytes())
+
+                query = "UPDATE cameras SET current_frame = %s WHERE id=%s"
+                cursor.execute(query, (a, self.id))
+                
                 conn.commit()
                 conn.close()
 

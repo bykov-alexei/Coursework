@@ -8,8 +8,7 @@ W = 0.1
 F = None
 
 last_location = None
-while(True):
-    # Capture frame-by-frame
+while True:
     ret, frame = cap.read()
 
     rgb_frame = frame[:, :, [2, 1, 0]]
@@ -33,6 +32,5 @@ while(True):
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# When everything done, release the capture
 cap.release()
 cv2.destroyAllWindows()

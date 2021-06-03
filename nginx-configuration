@@ -1,0 +1,16 @@
+server {
+    listen 80;
+
+    server_name faces.local;
+
+    location ~/images/(.+)$ {
+        root /home/alexei/Projects/Coursework;
+        add_header X-debug-message $1 always;
+        try_files $uri $uri/ =404;
+    }
+
+    location / {
+        root /home/alexei/Projects/Coursework/Server;
+        proxy_pass http://localhost:8000;
+    }
+}
