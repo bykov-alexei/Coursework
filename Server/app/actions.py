@@ -9,6 +9,11 @@ import os
 import base64
 from flask import request, jsonify, render_template, send_from_directory, redirect
 import numpy as np
+import pandas as pd
+import datetime
+import cv2
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 
 @app.route('/')
@@ -96,8 +101,60 @@ def get_specific_person_page(id: int):
     query = "SELECT * FROM known_persons WHERE id = %s"
     cursor.execute(query, (id,))
     person = cursor.fetchone()
+    
+    embedding = [value for key, value in person.items() if key.startswith('e')]
+    string = " + ".join([f"(e{i} - {embedding[i-1]}) * (e{i} - {embedding[i-1]})" for i in range(1, 129)])
+    query = f"SELECT * FROM occurrences WHERE SQRT({string}) < 0.6 ORDER BY timestamp DESC"
+    cursor.execute(query)
+    occurrences = cursor.fetchall()
     conn.close()
-    return render_template('person.html', person=person)
+
+    last_occurences = [occ['human_picture'] for occ in occurrences[-5:]]
+    data = pd.DataFrame(occurrences)
+    data.timestamp = pd.to_datetime(data['timestamp'])
+
+    today = datetime.datetime.now()
+    today_visits = data[
+        (data.timestamp.dt.year == today.year) &
+        (data.timestamp.dt.month == today.month) &
+        (data.timestamp.dt.day == today.day)]
+    today_visits = today_visits.groupby(today_visits.timestamp.dt.hour)['id'].count()
+
+    today_visits_plot = {i: 0 for i in range(24)}
+    for i, row in today_visits.iteritems():
+        today_visits_plot[i] = row
+    plt.clf()
+    plt.xlabel('hour')
+    plt.ylabel('number of occurrnces')
+    plt.bar(list(today_visits_plot.keys()), list(today_visits_plot.values()))
+    plt.savefig('123.jpg')
+    img = plt.imread('123.jpg')
+    success, a_numpy = cv2.imencode('.jpg', img)
+    day_histogram = base64.b64encode(a_numpy.tobytes()).decode()
+
+    this_month_visits = data[
+        (data.timestamp.dt.year == today.year) &
+        (data.timestamp.dt.month == today.month)]
+    this_month_visits = this_month_visits.groupby(this_month_visits.timestamp.dt.day)['id'].count()
+
+    this_month_visits_plot = {i: 0 for i in range(30)}
+    for i, row in this_month_visits.iteritems():
+        this_month_visits_plot[i] = row
+    plt.clf()
+    plt.bar(list(this_month_visits_plot.keys()), list(this_month_visits_plot.values()))
+    plt.xlabel('day')
+    plt.ylabel('number of occurrnces')
+    plt.savefig('123.jpg')
+    img = plt.imread('123.jpg')
+    success, a_numpy = cv2.imencode('.jpg', img)
+    this_month_histogram = base64.b64encode(a_numpy.tobytes()).decode()
+
+    return render_template('person.html', 
+            person=person, 
+            last_occurrences=['/'+'/'.join(occ['human_picture'].split('/')[1:]) for occ in occurrences[:5]],
+            day_histogram=day_histogram,
+            this_month_histogram=this_month_histogram
+    )
 
 @app.route('/person/<int:id>/delete', methods=['get'])
 def delete_person(id: int):

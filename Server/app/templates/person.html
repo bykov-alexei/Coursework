@@ -9,14 +9,45 @@
     <title>Persons</title>
 </head>
 <body>
-    <div id="content" class="p-5 d-flex flex-row justify-content-between">
-        <div class="card w-25">
-            <div class="card-header">
-                <h1>{{ person.name }}</h1>
+    <div id="content" class="p-5">
+        <div class="d-flex flex-row justify-content-between m-2">
+            <div class="card w-25">
+                <div class="card-header">
+                    <h1>{{ person.name }}</h1>
+                </div>
+                <div class="card-body">
+                    <img class="w-100" src="/images/{{ person.picture }}">
+                </div>
             </div>
-            <div class="card-body">
-                <img class="w-100" src="/images/{{ person.picture }}">
-                <p>Some information</p>
+            <div class="w-50 d-flex flex-column">
+                <div class="card">
+                    <div class="card-header">
+                        Last occurrences
+                    </div>
+                    <div class="card-body">
+                        {% for occ in last_occurrences %}
+                            <img class="p-2" style="width: 200px; height: 200px" src="{{ occ }}">
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex flex-row justify-content-between m-2">
+            <div class='card w-50 p-2'>
+                <div class="card-header">
+                    <h1>Occurences today</h1>
+                </div>
+                <div class='card-body'>
+                    <img style="width: 500px; height: 500px" src="data:image/jpg;base64, {{ day_histogram }}">
+                </div>
+            </div>
+            <div class='card w-50 p-2'>
+                <div class="card-header">
+                    <h1>Occurences this month</h1>
+                </div>
+                <div class='card-body'>
+                    <img style="width: 500px; height: 500px" src="data:image/jpg;base64, {{ this_month_histogram }}">
+                </div>
             </div>
         </div>
     </div>
