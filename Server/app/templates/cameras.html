@@ -8,7 +8,7 @@
     <title>Cameras</title>
 </head>
 <body>
-    <div id="content" class="p-5">
+    <div id="content" class="m-5">
         <div class="d-flex flex-row justify-content-between">
             <form action='/plan' method='POST' enctype='multipart/form-data' class="card">
                 <div class="card-header">
@@ -42,7 +42,7 @@
                 </div>
             </form>
         </div>
-        <div class="p-5">
+        <div class="m-5">
             {% for camera in cameras %}
             <div class="card w-25">
                 <div class="card-header">
@@ -53,6 +53,16 @@
                 </div>
             </div>
             {% endfor %}
+        </div>
+        <div class="m-5 card w-100">
+            <div class="card-header">
+                <h1>People seen today</h1>
+            </div>
+            <div class="card-body">
+            {% for occurrence in today_occurrences %}
+                <img style="width: 200px; height: 200px;"  src="{{ occurrence }}">
+            {% endfor %}
+            </div>
         </div>
     </div> 
 

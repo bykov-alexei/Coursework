@@ -14,6 +14,7 @@ import datetime
 import cv2
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
+from sklearn.cluster import OPTICS
 
 
 @app.route('/')
@@ -170,9 +171,30 @@ def cameras():
     conn, cursor = connect()
     query = "SELECT title, x, y, rstp, F, current_frame FROM cameras"
     cursor.execute(query)
-    conn.close()
+    cameras = cursor.fetchall()
 
-    return render_template('cameras.html', cameras=cursor.fetchall())
+    query = "SELECT * FROM occurrences WHERE DATE(`timestamp`)=CURDATE() AND e1 IS NOT NULL"
+    cursor.execute(query)
+    today_occurrences = cursor.fetchall()
+    arr = [[to["e%i" % i] for i in range(1, 129)] for to in today_occurrences]
+    arr = np.array(arr)
+    
+    model = OPTICS()
+    model.fit(arr)
+    indices = np.arange(len(today_occurrences))
+    result_occurrences = []
+    for i in range(np.max(model.labels_) + 1):
+        person_indices = indices[model.labels_ == i]
+        print(person_indices)
+        if len(person_indices) < 4:
+            continue
+        index = np.random.choice(person_indices)
+        result_occurrences.append('/'+'/'.join(today_occurrences[index]['human_picture'].split('/')[1:]))
+    
+    conn.close()
+    print(len(result_occurrences))
+ 
+    return render_template('cameras.html', cameras=cameras, today_occurrences=result_occurrences)
 
 @app.route('/people/page')
 def page():
